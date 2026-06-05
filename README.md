@@ -2,6 +2,9 @@
 
 这是一个本地图片解构资料库和提示词组合工具，使用模型gpt-image-2。
 
+> 🚀 **第一次用？先看 [快速上手（新手指南）](docs/快速上手.md)，从零一步步走通安装、入库、选词和生成。**
+
+
 第一阶段由 Codex、Claude Code 或其他任何 agent 使用仓库里的 artwork-destruction-tool skill 分析图片并写入本地资料库；
 
 第二阶段在前端跨图片勾选词条，组合中文提示词，并可调用 `gpt-image` CLI 生成新图。
@@ -86,6 +89,7 @@ data/tmp/               参考图临时文件
 
 ## 文档
 
+- [快速上手](docs/快速上手.md)：新手从零走通安装、入库、选词和生成。
 - [Codex Bridge](CODEX_BRIDGE.md)：Codex 传输 payload 约定。
 - [API](docs/API.md)：本地接口、生成参数和尺寸规则。
 - [Runbook](docs/RUNBOOK.md)：启动、环境变量、排错。

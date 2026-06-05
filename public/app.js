@@ -43,6 +43,9 @@ const els = {
   previewFrame: document.querySelector("#previewFrame"),
   previewImage: document.querySelector("#previewImage"),
   previewCaption: document.querySelector("#previewCaption"),
+  attachImageBtn: document.querySelector("#attachImageBtn"),
+  attachImageInput: document.querySelector("#attachImageInput"),
+  emptyPreview: document.querySelector("#previewFrame .empty-preview"),
   copyHandoffBtn: document.querySelector("#copyHandoffBtn"),
   handoffPrompt: document.querySelector("#handoffPrompt"),
   refreshBtn: document.querySelector("#refreshBtn"),
@@ -384,6 +387,7 @@ function renderActiveRecord() {
     els.previewFrame.classList.remove("has-image");
     els.previewImage.removeAttribute("src");
     els.previewCaption.textContent = "尚未选择资料";
+    els.emptyPreview.textContent = "尚未选择资料";
     els.overviewCard.innerHTML = `<p>Codex 传入资料后，这里会显示图片总览、基础信息、风格标签与情绪标签。</p>`;
     els.elementsList.innerHTML = `
       <div class="placeholder-block">
@@ -400,6 +404,7 @@ function renderActiveRecord() {
   } else {
     els.previewFrame.classList.remove("has-image");
     els.previewImage.removeAttribute("src");
+    els.emptyPreview.textContent = "此资料暂无原图，可拖拽 / 粘贴 / 点击右侧按钮补传。";
   }
   els.previewCaption.textContent = record.imageName || record.title || "当前资料原图";
 
@@ -895,6 +900,53 @@ async function deleteRecord(id) {
   }
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error("读取图片失败。"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function attachImageToActiveRecord(file) {
+  const record = getActiveRecord();
+  if (!record) {
+    setStatus("请先在资料库中选择一张资料，再补传原图。", true);
+    return;
+  }
+  if (!file || !/^image\/(png|jpe?g|webp)$/i.test(file.type)) {
+    setStatus("只支持 PNG、JPG 或 WebP 图片。", true);
+    return;
+  }
+
+  try {
+    setStatus(`正在为「${record.title || "未命名资料"}」补传原图…`);
+    const dataUrl = await readFileAsDataUrl(file);
+    const payload = {
+      ...record,
+      imageDataUrl: dataUrl,
+      imageName: record.imageName || file.name || ""
+    };
+    const res = await fetch("/api/records", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await readApiResponse(res);
+    if (!res.ok) throw new Error(data.error || "补传原图失败。");
+
+    const saved = data.record || payload;
+    const index = state.records.findIndex((item) => item.id === record.id);
+    if (index >= 0) state.records[index] = saved;
+    state.recordsSignature = "";
+    renderApp();
+    setStatus(`已为「${saved.title || "未命名资料"}」补传原图。`);
+  } catch (error) {
+    setStatus(error.message || "补传原图失败。", true);
+  }
+}
+
 function formatTime(value) {
   if (!value) return "未知时间";
   const date = new Date(value);
@@ -972,6 +1024,46 @@ els.libraryGrid.addEventListener("keydown", (event) => {
   if (!card) return;
   event.preventDefault();
   card.click();
+});
+
+els.attachImageBtn.addEventListener("click", () => {
+  if (!getActiveRecord()) {
+    setStatus("请先在资料库中选择一张资料，再补传原图。", true);
+    return;
+  }
+  els.attachImageInput.click();
+});
+
+els.attachImageInput.addEventListener("change", (event) => {
+  const file = event.target.files?.[0];
+  if (file) attachImageToActiveRecord(file);
+  event.target.value = "";
+});
+
+els.previewFrame.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  els.previewFrame.classList.add("drag-over");
+});
+
+els.previewFrame.addEventListener("dragleave", () => {
+  els.previewFrame.classList.remove("drag-over");
+});
+
+els.previewFrame.addEventListener("drop", (event) => {
+  event.preventDefault();
+  els.previewFrame.classList.remove("drag-over");
+  const file = event.dataTransfer?.files?.[0];
+  if (file) attachImageToActiveRecord(file);
+});
+
+document.addEventListener("paste", (event) => {
+  const target = event.target;
+  if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+  if (!getActiveRecord()) return;
+  const imageItem = [...(event.clipboardData?.items || [])].find((item) => item.type.startsWith("image/"));
+  if (!imageItem) return;
+  const file = imageItem.getAsFile();
+  if (file) attachImageToActiveRecord(file);
 });
 
 els.categoryPills.addEventListener("click", (event) => {

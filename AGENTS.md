@@ -16,6 +16,7 @@ public/index.html                 前端结构
 public/app.js                     前端状态、资料库、提示词和生成逻辑
 public/styles.css                 前端样式
 CODEX_BRIDGE.md                   Codex 入库 payload 约定
+docs/快速上手.md                  新手从零上手指南
 docs/API.md                       本地 API 文档
 docs/RUNBOOK.md                   运行和故障排查
 skills/artwork-destruction-tool/  随包 Codex/Agent skill

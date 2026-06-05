@@ -496,6 +496,23 @@ h3 {
   white-space: nowrap;
 }
 
+.attach-image-btn {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+.attach-image-hint {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.preview-frame.drag-over {
+  outline: 2px dashed #f3ead8;
+  outline-offset: -8px;
+}
+
 .original-preview-head {
   display: flex;
   align-items: baseline;
