@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Artwork Destruction Tool</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="panel intake-panel" aria-label="Codex 传输与任务状态">
+        <button id="copyHandoffBtn" class="corner-copy" type="button">复制入库指令</button>
+        <textarea id="handoffPrompt" class="copy-source" readonly spellcheck="false"></textarea>
+
+        <div class="brand-block">
+          <p class="eyebrow">Visual Deconstruction Workbench</p>
+          <h1>Artwork Destruction Tool</h1>
+          <p class="lede">第一阶段建立图片解构资料库；第二阶段从多张图中选择词条，组合模板并直接调用图片生成 API。</p>
+        </div>
+
+        <div class="side-switch" role="tablist" aria-label="左栏切换">
+          <button class="side-switch-btn active" type="button" data-panel="library">资料库</button>
+          <button class="side-switch-btn" type="button" data-panel="preset">预置</button>
+        </div>
+
+        <section class="side-panel library-section active" id="libraryPanel" aria-label="资料库图片">
+          <div class="side-section-head">
+            <strong>资料库</strong>
+            <button id="refreshBtn" type="button">刷新</button>
+          </div>
+          <div class="library-grid" id="libraryGrid"></div>
+        </section>
+
+        <section class="side-panel preset-section" id="presetPanel" aria-label="词条预置">
+          <div class="side-section-head">
+            <strong>预置</strong>
+            <button id="savePresetBtn" type="button">保存当前选择</button>
+          </div>
+          <input id="presetName" type="text" placeholder="预置名称，例如：冷感档案 + UI线框" />
+          <div class="preset-list" id="presetList"></div>
+        </section>
+
+        <div class="status-line" id="statusLine">等待 Codex 传入解构任务。</div>
+      </section>
+
+      <section class="panel results-panel" aria-label="视觉要素选择">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">资料词条选择</p>
+            <h2>资料库词条</h2>
+          </div>
+          <div class="bulk-actions">
+            <button id="selectAllBtn" type="button">全选</button>
+            <button id="clearAllBtn" type="button">清空</button>
+          </div>
+        </div>
+
+        <div class="selected-original">
+          <div class="preview-frame" id="previewFrame">
+            <img id="previewImage" alt="当前选择的原图" />
+            <div class="empty-preview">尚未选择资料</div>
+          </div>
+          <div class="selected-original-meta">
+            <strong>当前原图</strong>
+            <span id="previewCaption">尚未选择资料</span>
+          </div>
+        </div>
+
+        <div class="overview-card" id="overviewCard">
+          <p>Codex 传入任务后，这里会显示图片总览、基础信息、风格标签与情绪标签。</p>
+        </div>
+
+        <div class="category-pills" id="categoryPills"></div>
+
+        <div class="elements-list" id="elementsList">
+          <div class="placeholder-block">
+            <strong>等待分析结果</strong>
+            <span>每个视觉要素前都会带复选框，可跨分类多选。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel prompt-panel" aria-label="提示词组合与图片生成">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">提示词与生成</p>
+            <h2>组合与生成</h2>
+          </div>
+          <button id="copyBtn" type="button">复制</button>
+        </div>
+
+        <div class="selected-summary" id="selectedSummary">已选 0 个词条。</div>
+
+        <div class="prompt-options">
+          <label>
+            <span>创作主题，可留空</span>
+            <input id="targetTheme" type="text" placeholder="例如：未来城市海报、音乐封面、角色概念图" />
+          </label>
+          <label>
+            <span>生成模板</span>
+            <select id="outputUse">
+              <option value="自由融合：将所选词条融合为一张全新的视觉作品">自由融合</option>
+              <option value="海报 / 封面：强调视觉中心、标题空间、信息层级和传播辨识度">海报 / 封面</option>
+              <option value="品牌视觉：强调可复用视觉系统、材质语言、色彩规范和识别度">品牌视觉</option>
+              <option value="游戏 / 角色概念：强调角色轮廓、世界观氛围、材质和情绪张力">游戏 / 角色概念</option>
+            </select>
+          </label>
+        </div>
+
+        <textarea id="promptOutput" spellcheck="false" placeholder="勾选要素后点击下方按钮生成提示词。"></textarea>
+        <button class="primary-action compose-action" id="composeBtn" type="button">组合选中要素</button>
+
+        <div class="generation-settings">
+          <label>
+            <span>API Key，可留空使用环境变量</span>
+            <input id="generationApiKey" type="password" autocomplete="off" placeholder="sk-..." />
+          </label>
+          <label>
+            <span>Base URL，可留空使用官方端点或环境变量</span>
+            <input id="generationBaseUrl" type="url" autocomplete="off" placeholder="例如：https://api.openai.com/v1" />
+          </label>
+          <div class="generation-grid">
+            <label>
+              <span>尺寸预设</span>
+              <select id="imageSizePreset">
+                <option value="auto">默认：1024x1024</option>
+                <option value="1:1">1:1 方图 - 1024x1024</option>
+                <option value="16:9">16:9 横图 - 1536x864</option>
+                <option value="9:16">9:16 竖图 - 864x1536</option>
+                <option value="4:3">4:3 横图 - 1536x1152</option>
+                <option value="3:4">3:4 竖图 - 1152x1536</option>
+                <option value="3:2">3:2 横图 - 1536x1024</option>
+                <option value="2:3">2:3 竖图 - 1024x1536</option>
+                <option value="21:9">21:9 宽屏 - 1792x768</option>
+                <option value="custom">自定义像素</option>
+              </select>
+            </label>
+            <label>
+              <span>自定义像素</span>
+              <input id="customImageSize" type="text" inputmode="text" placeholder="如 1024x1024" disabled />
+            </label>
+            <label>
+              <span>质量</span>
+              <select id="imageQuality">
+                <option value="auto">auto</option>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+              </select>
+            </label>
+          </div>
+          <label class="remember-row">
+            <input id="includeReferenceImages" type="checkbox" />
+            <span>上传资料库原图作为参考图。第三方端点若不支持 images edits，请保持关闭。</span>
+          </label>
+          <p class="field-note">模型固定为 gpt-image-2。自定义尺寸需写成 1024x1024，宽高均为 16 的倍数，最长边不超过 3840，宽高比不超过 3:1。</p>
+        </div>
+
+        <button class="primary-action generate-action" id="generateBtn" type="button">调用 API 生成图片</button>
+
+        <div class="generation-output">
+          <div class="generated-preview" id="generatedPreview">
+            <span>生成结果会显示在这里</span>
+          </div>
+          <div class="generation-history" id="generationHistory"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
