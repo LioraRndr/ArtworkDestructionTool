@@ -38,6 +38,16 @@ npm start
 <install-dir>\Start-ArtworkDestructionTool.ps1
 ```
 
+## 自动更新
+
+通过启动脚本启动时（Windows 的 `Start-ArtworkDestructionTool.ps1`、macOS/Linux 的 `start.sh`），会在 `npm start` 之前自动执行一次 `git pull --ff-only`，把本地代码更新到 GitHub 最新版。
+
+- 仅当安装目录是 git 仓库、且系统装了 git 时才会拉取；否则跳过。
+- 拉取失败（离线、无法快进、有本地改动等）会被忽略，不影响正常启动，只在控制台打印一行提示。
+- `data/` 是 gitignored 的，更新不会动你的资料库和生成历史。
+- 直接用 `npm start` 启动**不会**触发自动更新；只有走启动脚本/桌面快捷方式才会。
+- 服务已经在运行时再点快捷方式，只会打开浏览器、不会拉取；要让更新生效需要先关掉服务再重新启动。
+
 ## 环境变量
 
 | 变量 | 用途 |

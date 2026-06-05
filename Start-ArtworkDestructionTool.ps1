@@ -14,12 +14,25 @@ function Test-AppServer {
   }
 }
 
+function Update-App {
+  if (-not (Get-Command git -ErrorAction SilentlyContinue)) { return }
+  if (-not (Test-Path (Join-Path $ProjectRoot ".git"))) { return }
+  try {
+    Write-Host "Checking for updates..."
+    git -C $ProjectRoot pull --ff-only 2>&1 | Write-Host
+  } catch {
+    Write-Host "Update check skipped: $($_.Exception.Message)"
+  }
+}
+
 if (Test-AppServer) {
   Start-Process $Url
   Write-Host "Artwork Destruction Tool is already running."
   Write-Host $Url
   return
 }
+
+Update-App
 
 Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @(
   "-NoProfile",

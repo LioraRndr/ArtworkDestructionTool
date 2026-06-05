@@ -41,6 +41,10 @@ cat > "$INSTALL_ROOT/start.sh" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
+if command -v git >/dev/null && [ -d .git ]; then
+  echo "Checking for updates..."
+  git pull --ff-only || echo "Update check skipped."
+fi
 npm start
 EOF
 chmod +x "$INSTALL_ROOT/start.sh"
